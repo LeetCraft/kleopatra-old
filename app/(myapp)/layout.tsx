@@ -4,7 +4,7 @@ import { MySideBar } from "./MySideBar";
 import { useKeyStore } from "@/feature/keystore";
 
 type MyAppLayoutProps = {
-  children: ReactNode[];
+  children: ReactNode;
 };
 
 const Hydrate = () => {

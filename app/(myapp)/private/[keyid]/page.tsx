@@ -145,14 +145,14 @@ export default function PrivateKeyPage({
             className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 transition-all text-sm sm:text-base"
           >
             <Pen className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span className="hidden xs:inline">Sign</span> Message
+            Sign Message
           </button>
           <button
             onClick={() => setShowDeleteDialog(true)}
             className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-300 transition-all text-sm sm:text-base"
           >
             <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span className="hidden xs:inline">Delete</span> Key
+            Delete Key
           </button>
         </div>
       </div>

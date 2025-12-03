@@ -97,7 +97,7 @@ export default function KeyImporter(props: KeyImporterComponentProps) {
           </div>
         </section>
 
-        <section className="bg-slate-900/50 rounded-lg border border-cyan-800/30 p-4 sm:p-6 min-h-0 h-full">
+        <section className="bg-slate-900/50 rounded-lg border border-cyan-800/30 p-4 sm:p-6 min-h-0 ">
           <div className="flex flex-col h-full space-y-3 sm:space-y-4">
             <div className="flex items-center space-x-2 text-cyan-400">
               <Import className="w-4 h-4 sm:w-5 sm:h-5" />
