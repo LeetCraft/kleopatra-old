@@ -1,11 +1,10 @@
 "use client";
 import * as openpgp from "openpgp";
 import { useKeyStore } from "@/feature/keystore";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import {
   Shield,
   Key,
-  FileText,
   Trash2,
   Copy,
   CheckCircle2,
@@ -18,10 +17,11 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useRouter } from "next/navigation";
 
 export default function PrivateKeyPage({
-  params: { keyid },
+  params,
 }: {
-  params: { keyid: string };
+  params: Promise<{ keyid: string }>;
 }) {
+  const { keyid } = use(params);
   const [privateKey, setPrivateKey] = useState("");
   const [publicKey, setPublicKey] = useState("");
   const [keyname, setKeyname] = useState("");
@@ -33,6 +33,7 @@ export default function PrivateKeyPage({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [textToSign, setTextToSign] = useState("");
   const [signature, setSignature] = useState("");
+  const [sigCopied, setSigCopied] = useState(false);
 
   const router = useRouter();
   const deletePrivateKey = useKeyStore((s) => s.deletePrivateKey);
@@ -60,24 +61,18 @@ export default function PrivateKeyPage({
 
   const handleDecipher = async () => {
     if (!message.trim()) {
-      setError("Please enter a message to decipher");
+      setError("Please enter a message to decrypt");
       return;
     }
-
     setIsLoading(true);
     try {
       await new Promise((resolve) => setTimeout(resolve, 1500));
-      const pgpMessage = await openpgp.readMessage({
-        armoredMessage: message,
-      });
+      const pgpMessage = await openpgp.readMessage({ armoredMessage: message });
       const key = await openpgp.readPrivateKey({ armoredKey: privateKey });
-      const { data } = await openpgp.decrypt({
-        decryptionKeys: key,
-        message: pgpMessage,
-      });
+      const { data } = await openpgp.decrypt({ decryptionKeys: key, message: pgpMessage });
       setMessage(data.toString());
     } catch (err) {
-      setError("Failed to decipher message. (Signed for the wrong key?))");
+      setError("Failed to decrypt message. Is this encrypted for this key?");
     } finally {
       setIsLoading(false);
     }
@@ -88,20 +83,13 @@ export default function PrivateKeyPage({
       setError("Please enter text to sign");
       return;
     }
-
     setIsLoading(true);
     try {
       await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      const privateKeyObj = await openpgp.readPrivateKey({
-        armoredKey: privateKey,
-      });
-      const message = await openpgp.createMessage({ text: textToSign });
-      const signature = await openpgp.sign({
-        message,
-        signingKeys: privateKeyObj,
-      });
-      setSignature(signature.toString());
+      const privateKeyObj = await openpgp.readPrivateKey({ armoredKey: privateKey });
+      const msg = await openpgp.createMessage({ text: textToSign });
+      const sig = await openpgp.sign({ message: msg, signingKeys: privateKeyObj });
+      setSignature(sig.toString());
     } catch (err) {
       setError("Failed to create signature");
     } finally {
@@ -115,6 +103,12 @@ export default function PrivateKeyPage({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleCopySignature = async () => {
+    await navigator.clipboard.writeText(signature);
+    setSigCopied(true);
+    setTimeout(() => setSigCopied(false), 2000);
+  };
+
   const handleDeleteKey = () => {
     try {
       deletePrivateKey(keyid);
@@ -126,182 +120,166 @@ export default function PrivateKeyPage({
   };
 
   return (
-    <div className="flex flex-col p-3 sm:p-4 md:p-6 h-full w-full overflow-auto space-y-4 sm:space-y-6">
-      {/* Header Section */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-        <div className="flex items-center space-x-3 sm:space-x-4">
-          <div className="p-2 sm:p-3 rounded-xl bg-cyan-500/10 shadow-inner">
-            <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-400" />
+    <div className="flex flex-col gap-5 p-5 md:p-7 h-full w-full overflow-auto">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="icon-wrap">
+            <Shield className="w-5 h-5 text-cyan-500" />
           </div>
-          <h1 className="text-xl sm:text-2xl font-bold text-cyan-50">
-            Private Key:{" "}
-            <span className="text-cyan-400 break-all">{keyname}</span>
-          </h1>
+          <div>
+            <p className="section-label mb-0.5">Private Key</p>
+            <h1 className="text-lg font-bold tracking-tight truncate" style={{ color: "var(--text-heading)" }}>
+              {keyname || keyid}
+            </h1>
+          </div>
         </div>
 
-        <div className="flex gap-2 sm:gap-4">
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setShowSignDialog(true)}
-            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 transition-all text-sm sm:text-base"
+            className="btn-ghost"
+            style={{ color: "#059669", borderColor: "rgba(16,185,129,0.25)" }}
           >
-            <Pen className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            Sign Message
+            <Pen className="w-4 h-4" />
+            <span className="hidden sm:inline">Sign Message</span>
           </button>
-          <button
-            onClick={() => setShowDeleteDialog(true)}
-            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-300 transition-all text-sm sm:text-base"
-          >
-            <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            Delete Key
+          <button onClick={() => setShowDeleteDialog(true)} className="btn-danger">
+            <Trash2 className="w-4 h-4" />
+            <span className="hidden sm:inline">Delete</span>
           </button>
         </div>
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-auto gap-4 sm:gap-6 flex-1 min-h-0">
-        {/* Public Key Section */}
-        <section className="bg-slate-900/50 rounded-xl border border-cyan-800/30 p-4 sm:p-6">
-          <div className="flex items-center justify-between mb-3 sm:mb-4">
-            <div className="flex items-center space-x-2 text-cyan-400">
-              <Key className="w-4 h-4 sm:w-5 sm:h-5" />
-              <h3 className="font-medium text-sm sm:text-base">Public Key</h3>
+      {/* Main grid */}
+      <div className="grid md:grid-cols-2 gap-4 flex-1 min-h-0">
+        {/* Public Key viewer */}
+        <section className="glass-card flex flex-col p-5 gap-3 min-h-[280px]">
+          <div className="flex items-center justify-between">
+            <div className="section-label">
+              <Key className="w-3 h-3" />
+              Derived Public Key
             </div>
-            <button
-              onClick={handleCopyPublicKey}
-              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 text-xs sm:text-sm transition-all"
-            >
+            <button onClick={handleCopyPublicKey} className="btn-ghost py-1.5 text-xs">
               {copied ? (
-                <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
               ) : (
-                <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <Copy className="w-3.5 h-3.5" />
               )}
-              {copied ? "Copied!" : "Copy Key"}
+              {copied ? "Copied!" : "Copy"}
             </button>
           </div>
-          <textarea
-            className="w-full h-[200px] sm:h-[calc(100%-3rem)] resize-none rounded-lg bg-slate-800/50 border border-cyan-800/30 p-3 sm:p-4 text-cyan-100 font-mono text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
-            value={publicKey}
-            readOnly
-          />
+          <textarea className="textarea-field flex-1 min-h-[200px]" value={publicKey} readOnly />
         </section>
 
-        {/* Decipher Message Section */}
-        <section className="bg-slate-900/50 rounded-xl border border-cyan-800/30 p-4 sm:p-6">
-          <div className="flex items-center space-x-2 text-cyan-400 mb-3 sm:mb-4">
-            <Lock className="w-4 h-4 sm:w-5 sm:h-5" />
-            <h3 className="font-medium text-sm sm:text-base">
-              Decipher Message
-            </h3>
+        {/* Decrypt message */}
+        <section className="glass-card flex flex-col p-5 gap-3 min-h-[280px]">
+          <div className="section-label">
+            <Lock className="w-3 h-3" />
+            Decrypt Message
           </div>
-          <div className="relative h-[200px] sm:h-[calc(100%-3rem)]">
+          <div className="relative flex-1 flex flex-col">
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Enter a ciphered PGP message to decipher..."
-              className="w-full h-full resize-none rounded-lg bg-slate-800/50 border border-cyan-800/30 p-3 sm:p-4 text-cyan-100 font-mono text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+              placeholder="Paste a PGP-encrypted message to decrypt..."
+              className="textarea-field flex-1 min-h-[200px] pb-14"
             />
-            <button
-              onClick={handleDecipher}
-              disabled={!message.trim()}
-              className="absolute right-2 sm:right-4 bottom-2 sm:bottom-4 px-4 sm:px-6 py-2 sm:py-3 rounded-lg bg-cyan-500 hover:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium transition-colors flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base"
-            >
-              <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              Decipher
+            <button onClick={handleDecipher} disabled={!message.trim()} className="btn-primary absolute right-3 bottom-3">
+              <Lock className="w-3.5 h-3.5" />
+              Decrypt
             </button>
           </div>
         </section>
       </div>
 
-      {/* Dialogs */}
+      {/* Sign Message Dialog */}
       <Dialog
         isOpen={showSignDialog}
-        onClose={() => {
-          setShowSignDialog(false);
-          setTextToSign("");
-          setSignature("");
-        }}
+        onClose={() => { setShowSignDialog(false); setTextToSign(""); setSignature(""); }}
         title="Sign Message"
       >
         <div className="space-y-4">
-          <textarea
-            value={textToSign}
-            onChange={(e) => setTextToSign(e.target.value)}
-            placeholder="Enter text to sign..."
-            className="w-full h-32 bg-slate-800 border border-cyan-800/30 rounded-lg p-3 text-cyan-100"
-          />
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: "var(--text-tertiary)" }}>
+              Message to Sign
+            </label>
+            <textarea
+              value={textToSign}
+              onChange={(e) => setTextToSign(e.target.value)}
+              placeholder="Enter the text you want to sign..."
+              className="textarea-field h-28"
+            />
+          </div>
+
           {signature && (
-            <div className="relative">
-              <textarea
-                value={signature}
-                readOnly
-                className="w-full h-32 bg-slate-800 border border-cyan-800/30 rounded-lg p-3 text-cyan-100"
-              />
-              <button
-                onClick={async () => {
-                  await navigator.clipboard.writeText(signature);
-                  setCopied(true);
-                  setTimeout(() => setCopied(false), 2000);
-                }}
-                className="absolute right-2 top-2 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 text-sm transition-all"
-              >
-                {copied ? (
-                  <CheckCircle2 className="w-4 h-4" />
-                ) : (
-                  <Copy className="w-4 h-4" />
-                )}
-                {copied ? "Copied!" : "Copy"}
-              </button>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-tertiary)" }}>
+                  PGP Signature
+                </label>
+                <button onClick={handleCopySignature} className="btn-ghost py-1 text-xs">
+                  {sigCopied ? <CheckCircle2 className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                  {sigCopied ? "Copied!" : "Copy"}
+                </button>
+              </div>
+              <textarea value={signature} readOnly className="textarea-field h-28" style={{ color: "#059669" }} />
             </div>
           )}
-          <button
-            onClick={handleSign}
-            className="w-full py-2 bg-cyan-500 hover:bg-cyan-600 rounded-lg transition-colors text-white"
-          >
-            {signature ? "Renerate Signature" : "Generate Signature"}
+
+          <button onClick={handleSign} className="btn-primary w-full justify-center py-2.5">
+            <Pen className="w-4 h-4" />
+            {signature ? "Re-generate Signature" : "Generate Signature"}
           </button>
         </div>
       </Dialog>
 
-      <Dialog
-        isOpen={showDeleteDialog}
-        onClose={() => setShowDeleteDialog(false)}
-        title="Delete Private Key"
-      >
-        <div className="space-y-4">
-          <p className="text-red-300">
-            Warning: Deleting this private key is permanent and cannot be
-            undone. Make sure you have a backup if needed.
-          </p>
-          <div className="flex justify-end gap-3">
-            <button
-              onClick={() => setShowDeleteDialog(false)}
-              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              className="px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg transition-colors"
-              onClick={handleDeleteKey}
-            >
+      {/* Delete Dialog */}
+      <Dialog isOpen={showDeleteDialog} onClose={() => setShowDeleteDialog(false)} title="Delete Private Key">
+        <div className="space-y-5">
+          <div
+            className="flex items-start gap-3 p-4 rounded-xl"
+            style={{ background: "var(--danger-bg)", border: "1px solid var(--danger-border)" }}
+          >
+            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: "var(--danger-text)" }} />
+            <div>
+              <p className="text-sm font-semibold mb-1" style={{ color: "var(--danger-text)" }}>
+                This action is permanent
+              </p>
+              <p className="text-xs leading-relaxed" style={{ color: "var(--danger-text)", opacity: 0.7 }}>
+                The private key <span className="font-medium">{keyname}</span> will be permanently removed. Ensure you have a backup before proceeding.
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button onClick={() => setShowDeleteDialog(false)} className="btn-neutral">Cancel</button>
+            <button onClick={handleDeleteKey} className="btn-danger" style={{ borderColor: "rgba(239,68,68,0.4)", background: "var(--danger-bg)" }}>
+              <Trash2 className="w-4 h-4" />
               Delete Permanently
             </button>
           </div>
         </div>
       </Dialog>
 
+      {/* Loading overlay */}
       {isLoading && (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-slate-800 border border-cyan-800/30 rounded-lg p-6 flex flex-col items-center space-y-4">
-            <LoadingSpinner className="w-8 h-8 text-cyan-400" />
-            <p className="text-cyan-300">Processing...</p>
+        <div className="fixed inset-0 backdrop-blur-md flex items-center justify-center z-50" style={{ background: "var(--bg-overlay)" }}>
+          <div className="flex flex-col items-center gap-4 p-8 rounded-2xl" style={{ background: "var(--overlay-card-bg)", border: "1px solid var(--overlay-card-border)" }}>
+            <LoadingSpinner className="w-8 h-8 text-cyan-500" />
+            <p className="text-sm" style={{ color: "var(--text-accent)" }}>Processing…</p>
           </div>
         </div>
       )}
 
+      {/* Error toast */}
       {error && (
-        <div className="fixed bottom-4 right-4 bg-red-900/90 text-red-100 p-4 rounded-lg flex items-center gap-2 animate-in slide-in-from-bottom">
-          <AlertCircle className="w-5 h-5" />
-          {error}
+        <div
+          className="fixed bottom-5 right-5 max-w-sm animate-slide-up flex items-start gap-3 p-4 rounded-xl shadow-xl"
+          style={{ background: "var(--bg-card)", border: "1px solid var(--danger-border)" }}
+        >
+          <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: "var(--danger-text)" }} />
+          <p className="flex-1 text-sm" style={{ color: "var(--text-primary)" }}>{error}</p>
+          <button onClick={() => setError(null)} className="text-xs transition-colors" style={{ color: "var(--text-tertiary)" }}>✕</button>
         </div>
       )}
     </div>
