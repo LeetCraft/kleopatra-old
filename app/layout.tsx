@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/feature/theme";
+import { PHProvider } from "@/feature/posthog";
 
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"] });
 
@@ -121,7 +122,9 @@ export default function RootLayout({
         className={`flex flex-col overflow-auto w-screen h-screen ${jetbrainsMono.className} select-none`}
         style={{ background: "var(--bg-page)", color: "var(--text-primary)" }}
       >
-        <ThemeProvider>{children}</ThemeProvider>
+        <PHProvider>
+          <ThemeProvider>{children}</ThemeProvider>
+        </PHProvider>
       </body>
     </html>
   );

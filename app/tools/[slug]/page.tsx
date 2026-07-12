@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowRight, Shield, Lock, CheckCircle } from "lucide-react";
+import { ArrowRight, Shield, CheckCircle } from "lucide-react";
 
 const BASE_URL = "https://kleopatra.app";
 
@@ -521,58 +521,55 @@ export default async function ToolPage({
     <>
       <FAQSchema faqs={tool.faqs} />
 
-      <article className="space-y-10">
+      <article className="mx-auto w-full" style={{ maxWidth: "820px", padding: "48px 24px 24px" }}>
         {/* Header */}
-        <header className="space-y-4">
-          <div className="flex flex-wrap items-center gap-2 text-xs" style={{ color: "var(--text-tertiary)" }}>
-            <Link href="/tools" className="hover:opacity-75 transition-opacity">
+        <header className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-center gap-2" style={{ fontSize: "13px", fontWeight: 600, color: "#8a8d93" }}>
+            <Link href="/tools" style={{ color: "#8a8d93" }} className="hover:opacity-75 transition-opacity">
               Tools
             </Link>
             <span>/</span>
-            <span style={{ color: "var(--text-accent)" }}>{tool.title}</span>
+            <span style={{ color: "#d61f2b" }}>{tool.title}</span>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight leading-tight" style={{ color: "var(--text-heading)" }}>
+          <h1 style={{ margin: 0, fontSize: "clamp(30px, 5vw, 44px)", fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1.08, color: "#1a1c1f" }}>
             {tool.headline}
           </h1>
 
-          <p className="text-lg leading-relaxed max-w-2xl" style={{ color: "var(--text-secondary)" }}>
+          <p style={{ margin: 0, maxWidth: "680px", fontSize: "19px", lineHeight: 1.55, color: "#4e5058" }}>
             {tool.intro}
           </p>
 
           {/* Trust badges */}
-          <div className="flex flex-wrap gap-3 pt-2">
+          <div className="flex flex-wrap gap-2" style={{ paddingTop: "4px" }}>
             {tool.trustPoints.map((point) => (
               <span
                 key={point}
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full"
-                style={{ color: "var(--text-accent)", background: "var(--accent-subtle)", border: "1px solid var(--accent-border)" }}
+                className="inline-flex items-center gap-1.5"
+                style={{ height: "30px", padding: "0 12px", borderRadius: "999px", background: "#f1f2f4", color: "#4e5058", fontSize: "13px", fontWeight: 600 }}
               >
-                <CheckCircle className="w-3 h-3 flex-shrink-0" />
+                <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" style={{ color: "#1b7a48" }} />
                 {point}
               </span>
             ))}
           </div>
         </header>
 
-        {/* CTA */}
-        <div className="flex flex-wrap gap-3">
+        {/* CTA — all tool-page action buttons open the app at "/" */}
+        <div className="flex flex-wrap gap-3" style={{ marginTop: "28px" }}>
           <Link
-            href={tool.cta.href}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm"
-            style={{
-              background: "var(--accent)",
-              color: "#080F1C",
-            }}
+            href="/"
+            className="tools-btn-primary"
+            style={{ height: "48px", padding: "0 22px", fontSize: "16px", borderRadius: "12px" }}
           >
             {tool.cta.label}
             <ArrowRight className="w-4 h-4" />
           </Link>
           {tool.secondaryCta && (
             <Link
-              href={tool.secondaryCta.href}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all"
-              style={{ color: "var(--text-secondary)", border: "1px solid var(--border-default)" }}
+              href="/"
+              className="tools-btn-secondary"
+              style={{ height: "48px", padding: "0 20px", fontSize: "16px", borderRadius: "12px" }}
             >
               {tool.secondaryCta.label}
             </Link>
@@ -580,14 +577,14 @@ export default async function ToolPage({
         </div>
 
         {/* Body */}
-        <div className="space-y-5 leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+        <div className="flex flex-col gap-5" style={{ marginTop: "40px" }}>
           {tool.body.map((para, i) => {
             const parts = para.split(/(\*\*[^*]+\*\*)/g);
             return (
-              <p key={i} className="text-base">
+              <p key={i} style={{ margin: 0, fontSize: "17px", lineHeight: 1.7, color: "#4e5058" }}>
                 {parts.map((part, j) =>
                   part.startsWith("**") && part.endsWith("**") ? (
-                    <strong key={j} className="font-semibold" style={{ color: "var(--text-heading)" }}>
+                    <strong key={j} style={{ fontWeight: 700, color: "#1a1c1f" }}>
                       {part.slice(2, -2)}
                     </strong>
                   ) : (
@@ -601,41 +598,39 @@ export default async function ToolPage({
 
         {/* Privacy callout */}
         <div
-          className="rounded-2xl p-6 flex gap-4"
-          style={{ background: "var(--accent-subtle)", border: "1px solid var(--accent-border)" }}
+          className="flex gap-4"
+          style={{ marginTop: "40px", borderRadius: "18px", padding: "24px", background: "#fdecec", border: "1px solid #f7d5d7" }}
         >
-          <Shield className="w-5 h-5 flex-shrink-0 mt-0.5 text-cyan-500" />
-          <div className="space-y-1">
-            <p className="text-sm font-semibold" style={{ color: "var(--text-heading)" }}>
+          <Shield className="w-5 h-5 flex-shrink-0" style={{ marginTop: "2px", color: "#d61f2b" }} />
+          <div className="flex flex-col gap-1.5">
+            <p style={{ margin: 0, fontSize: "15px", fontWeight: 800, color: "#1a1c1f" }}>
               Your privacy is guaranteed by design
             </p>
-            <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-              All cryptographic operations in Kleopatra run entirely in your
-              browser. Nothing you type, encrypt, decrypt, or generate is ever
-              sent to our servers. There are no server logs, no analytics on your
-              keys, and no accounts required. The code is open-source — you can
-              verify every claim yourself.
+            <p style={{ margin: 0, fontSize: "14px", lineHeight: 1.65, color: "#5c5f66" }}>
+              All cryptographic operations in Kleopatra run entirely in your browser. Nothing you
+              type, encrypt, decrypt, or generate is ever sent to our servers. There are no server
+              logs, no analytics on your keys, and no accounts required. The code is open-source — you
+              can verify every claim yourself.
             </p>
           </div>
         </div>
 
         {/* FAQ */}
-        <section className="space-y-4">
-          <h2 className="text-xl font-bold flex items-center gap-2" style={{ color: "var(--text-heading)" }}>
-            <Lock className="w-4 h-4 text-cyan-500" />
+        <section className="flex flex-col gap-4" style={{ marginTop: "48px" }}>
+          <h2 style={{ margin: 0, fontSize: "24px", fontWeight: 800, letterSpacing: "-0.02em", color: "#1a1c1f" }}>
             Frequently Asked Questions
           </h2>
-          <div className="space-y-3">
+          <div className="flex flex-col gap-3">
             {tool.faqs.map((faq) => (
               <div
                 key={faq.q}
-                className="rounded-xl p-5 space-y-2"
-                style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)" }}
+                className="flex flex-col gap-2"
+                style={{ borderRadius: "16px", padding: "20px 22px", background: "#fff", border: "1px solid #ececf0", boxShadow: "0 1px 2px rgba(20,20,30,0.04)" }}
               >
-                <h3 className="text-sm font-semibold" style={{ color: "var(--text-heading)" }}>
+                <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "#1a1c1f" }}>
                   {faq.q}
                 </h3>
-                <p className="text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                <p style={{ margin: 0, fontSize: "15px", lineHeight: 1.6, color: "#5c5f66" }}>
                   {faq.a}
                 </p>
               </div>
@@ -644,19 +639,16 @@ export default async function ToolPage({
         </section>
 
         {/* Related tools */}
-        <section className="space-y-4">
-          <h2 className="text-lg font-bold" style={{ color: "var(--text-heading)" }}>Related Tools</h2>
+        <section className="flex flex-col gap-4" style={{ marginTop: "48px" }}>
+          <h2 style={{ margin: 0, fontSize: "20px", fontWeight: 800, letterSpacing: "-0.02em", color: "#1a1c1f" }}>
+            Related Tools
+          </h2>
           <div className="flex flex-wrap gap-2">
             {Object.entries(tools)
               .filter(([s]) => s !== slug)
               .slice(0, 5)
               .map(([s, t]) => (
-                <Link
-                  key={s}
-                  href={`/tools/${s}`}
-                  className="text-xs px-3 py-1.5 rounded-lg transition-all"
-                  style={{ color: "var(--text-secondary)", border: "1px solid var(--border-default)" }}
-                >
+                <Link key={s} href={`/tools/${s}`} className="tools-related">
                   {t.title}
                 </Link>
               ))}
