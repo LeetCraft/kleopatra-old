@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import posthog from "posthog-js";
 import { PostHogProvider } from "posthog-js/react";
 
-const POSTHOG_KEY = "phc_myQYs3Rjeuf2iLo3ZWuw3q9e2EuLY6W9ude7kn4YqWkx";
+const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY || ""; // analytics stay off unless a key is set
 
 /**
  * Manual pageview capture. We only send the pathname (never query strings),
@@ -24,7 +24,7 @@ function PostHogPageview() {
 
 export function PHProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    if (typeof window === "undefined" || posthog.__loaded) return;
+    if (typeof window === "undefined" || posthog.__loaded || !POSTHOG_KEY) return;
 
     posthog.init(POSTHOG_KEY, {
       // First-party EU proxy (RGPD): all traffic goes through kleopatra.app.
